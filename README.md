@@ -1,7 +1,8 @@
 # ForkCal
 Tuning fork watch timegrapher for Bulova Accutron and ETA movements, such as Omega f300, etc.
 
-[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&slug=joncox&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/joncox)
+This is a fork of the original work from joncox123 implementing a new more efficient and compatible GUI using PySide6 and PyQtGraph instead of tkinter and matplotlib. The GUI has been changed to stack vertically the charts.
+Additionally the 480 Hz frequency setting has been added, used by some of the last Accutron movements.
 
 <p align="center">
     <img src="pics/screenshot.png" alt="Screenshot of ForkCal" width="600">
@@ -18,14 +19,29 @@ This timegrapher software is intended to be used with an *inexpensive* USB timeg
 </p>
 
 ## Software Requirements
-Only tested on Linux, but may run on other operating systems. I assume you are running a Debian-based OS like Ubuntu. To run on other distributions, simply install the required packages using your package manager.
+Tested on macOS and a Debian based Linux (e.g: Ubuntu) using Python 3.14, but may run on other operating systems. To run on other distributions, simply install the required packages using your package manager.
 
-## Installation and launch
-- sudo apt-get install python3-pyaudio portaudio19-dev
-- pip install -r requirements.txt
-- python3 forkcal.py
+## Installation
+### Linux
+- `sudo apt-get install python3-pyaudio portaudio19-dev`
 
-## Instructions
+### macOS
+Install Homebrew package manager if not already present: https://brew.sh
+
+- `brew install portaudio`
+
+## Launch
+- `python3 -m venv venv`
+- `source venv/bin/activate`
+- `pip install -r requirements.txt`
+- `python forkcal.py`
+
+## Build
+There is a build script using Nuitka for creating a binary executable, making it easier to launch from GUI. The script require the additional packages for Linux:
+- `sudo apt-get gcc patchelf ccache`
+Simply launch `build.sh` and will automatically build the correct application (macOS or Linux) into the `./dist` directory. 
+
+## Instructions (unchanged from the original repo by joncox123)
 Select the reference frequency for your movement, which is the frequency of the tuning fork. Early Accutrons run at 360 Hz, while the later ETA movements such as the Omega f300 run at 300 Hz.
 Also, for good accuracy, you should set the acquisition period to the longest duration possible, such as 1 second or more. 
 On some watches, the second harmonic of the oscillation frequnecy is actually stronger and clearer (higher SNR) than the fundamental mode. For example, on my Accutron 214, the signal at 2*360 Hz = 720 Hz is much stronger on my cheap USB timegrapher. Therefore, I can get better accuracy and performance by selecting a reference frequency of 720 Hz instead of 360 Hz.
@@ -58,4 +74,5 @@ The accuracy is determined by three factors, the acquisition period (longer the 
 Regarding the SNR of the USB timegrapher, I noticed that the flashing red LED generates an electrical noise that is picked up. Cutting the LED leads eliminates this noise and can improve performance. Placing the device in a quite room or inside an insulated box can reduce ambient noise. 
 
 ## Credits and License
-Developed by joncox123 using Claude AI. All rights reserved.
+Developed by joncox123 using Claude AI. All rights reserved.<br>
+Refactored by maxvalle using Claude AI. All rights reserved.

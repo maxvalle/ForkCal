@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=ForkCal
+Exec=/full/path/to/ForkCal
+Icon=/full/path/to/myicon.png
+Type=Application
+Terminal=false

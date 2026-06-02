@@ -21,6 +21,7 @@ from contextlib import contextmanager
 
 class PoorFitError(Exception):
     """Exception raised when sine wave fit quality is too poor"""
+
     pass
 
 
@@ -67,16 +68,16 @@ def get_audio_devices():
             print(f"  Host API: {info['hostApi']}")
 
             # Only add input devices (with input channels > 0)
-            if info['maxInputChannels'] > 0:
+            if info["maxInputChannels"] > 0:
                 device_str = f"{i}: {info['name']} ({info['maxInputChannels']} ch, {int(info['defaultSampleRate'])} Hz)"
                 devices.append(device_str)
-                print(f"  ✓ Added to device list")
+                print("  ✓ Added to device list")
             else:
-                print(f"  ✗ Skipped (no input channels)")
+                print("  ✗ Skipped (no input channels)")
 
         except Exception as e:
             print(f"\nDevice {i}: ERROR querying device - {e}")
-            print(f"  ✗ Skipped due to error")
+            print("  ✗ Skipped due to error")
 
     p.terminate()
     print(f"\n=== Found {len(devices)} input device(s) ===\n")
@@ -103,7 +104,7 @@ def get_supported_sample_rates(device_name, test_rates=None):
         test_rates = [8000, 16000, 22050, 44100, 48000, 96000, 192000]
 
     # Extract device index from device name string "index: name ..."
-    device_index = int(device_name.split(':')[0])
+    device_index = int(device_name.split(":")[0])
 
     p = pyaudio.PyAudio()
     supported_rates = []
@@ -118,7 +119,7 @@ def get_supported_sample_rates(device_name, test_rates=None):
                 input=True,
                 input_device_index=device_index,
                 frames_per_buffer=1024,
-                start=False  # Don't start the stream
+                start=False,  # Don't start the stream
             )
             # If successful, close immediately and add to supported list
             stream.close()
@@ -136,7 +137,15 @@ class AudioAnalyzer:
     Real-time audio analyzer using PyAudio and scipy.signal.welch
     """
 
-    def __init__(self, device_name, sample_rate, acquisition_period, num_averages, reference_freq=360.0, freq_estimation_method='sine_fit'):
+    def __init__(
+        self,
+        device_name,
+        sample_rate,
+        acquisition_period,
+        num_averages,
+        reference_freq=360.0,
+        freq_estimation_method="sine_fit",
+    ):
         """
         Initialize the audio analyzer
 
@@ -163,7 +172,7 @@ class AudioAnalyzer:
         self.freq_estimation_method = freq_estimation_method
 
         # Extract device index from device name string "index: name ..."
-        self.device_index = int(device_name.split(':')[0])
+        self.device_index = int(device_name.split(":")[0])
 
         # Calculate buffer parameters
         self.chunk_size = int(self.sample_rate * self.acquisition_period)
@@ -226,7 +235,7 @@ class AudioAnalyzer:
             input=True,
             input_device_index=self.device_index,
             frames_per_buffer=self.chunk_size,
-            stream_callback=self._audio_callback
+            stream_callback=self._audio_callback,
         )
 
         # Start the stream
@@ -315,16 +324,17 @@ class AudioAnalyzer:
         try:
             # Use all available data for maximum frequency resolution
             # nperseg = length of data means single segment (no averaging within Welch)
-            nperseg = len(audio_float)//4
+            nperseg = len(audio_float) // 4
 
             frequencies, psd = signal.welch(
                 audio_float,
                 fs=self.sample_rate,
-                window='hann',
+                window="hann",
                 nperseg=nperseg,
                 noverlap=None,
-                scaling='density',
-                nfft=fft_interp_factor*nperseg # zero pad to interpolate and improve frequency resolution
+                scaling="density",
+                nfft=fft_interp_factor
+                * nperseg,  # zero pad to interpolate and improve frequency resolution
             )
 
             # Convert to dB (with floor to avoid log(0))
@@ -382,7 +392,9 @@ class AudioAnalyzer:
             else:
                 return None, None
 
-    def sine_best_fit(self, x_cropped, t_cropped, center_freq, residual_threshold, debug_data, debug):
+    def sine_best_fit(
+        self, x_cropped, t_cropped, center_freq, residual_threshold, debug_data, debug
+    ):
         # Step 3: Fit a sine wave directly to the cropped filtered signal
         # Model: A * sin(2*pi*f*t + phi)
 
@@ -404,12 +416,16 @@ class AudioAnalyzer:
             p0 = [A_guess, f_guess, phi_guess]
 
             # Fit the sine model directly to the cropped filtered signal
-            popt, pcov = curve_fit(sine_model, t_cropped, x_cropped, p0=p0,
-                                    method='lm',
-                                    ftol=1e-15,      # Tighter function tolerance
-                                    xtol=1e-15,      # Tighter parameter tolerance
-                                    gtol=1e-15)      # Tighter gradient tolerance
-
+            popt, pcov = curve_fit(
+                sine_model,
+                t_cropped,
+                x_cropped,
+                p0=p0,
+                method="lm",
+                ftol=1e-15,  # Tighter function tolerance
+                xtol=1e-15,  # Tighter parameter tolerance
+                gtol=1e-15,
+            )  # Tighter gradient tolerance
 
             # Extract fitted parameters
             A_fit, f_fit, phi_fit = popt
@@ -435,16 +451,16 @@ class AudioAnalyzer:
             # ALWAYS update debug plots, even if fit is poor
             if debug:
                 # Store debug data
-                debug_data['x_cropped_fit'] = x_cropped
-                debug_data['t_cropped_fit'] = t_cropped
-                debug_data['fitted_signal'] = fitted_signal
-                debug_data['residuals'] = residuals
-                debug_data['A_fit'] = A_fit
-                debug_data['f_fit'] = f_fit
-                debug_data['phi_fit'] = phi_fit
-                debug_data['estimated_freq'] = estimated_freq
-                debug_data['deviation_spd'] = deviation_spd
-                debug_data['fit_method'] = 'sine_fit'
+                debug_data["x_cropped_fit"] = x_cropped
+                debug_data["t_cropped_fit"] = t_cropped
+                debug_data["fitted_signal"] = fitted_signal
+                debug_data["residuals"] = residuals
+                debug_data["A_fit"] = A_fit
+                debug_data["f_fit"] = f_fit
+                debug_data["phi_fit"] = phi_fit
+                debug_data["estimated_freq"] = estimated_freq
+                debug_data["deviation_spd"] = deviation_spd
+                debug_data["fit_method"] = "sine_fit"
 
                 # Put debug data in queue (non-blocking, discard if full)
                 try:
@@ -454,7 +470,7 @@ class AudioAnalyzer:
                     try:
                         self.debug_plot_queue.get_nowait()
                         self.debug_plot_queue.put_nowait(debug_data)
-                    except:
+                    except (queue.Full, queue.Empty):
                         pass  # If still fails, just skip this update
 
             # Check fit quality and raise exception AFTER debug data is queued
@@ -462,7 +478,9 @@ class AudioAnalyzer:
             if signal_amplitude > 0:
                 relative_residual = rms_residual / signal_amplitude
                 if relative_residual > residual_threshold:
-                    raise PoorFitError(f"Poor fit quality: RMS residual {relative_residual:.2%} exceeds threshold {residual_threshold:.2%}")
+                    raise PoorFitError(
+                        f"Poor fit quality: RMS residual {relative_residual:.2%} exceeds threshold {residual_threshold:.2%}"
+                    )
 
             # Update timegrapher data (only if fit quality is good)
             with self.lock:
@@ -481,7 +499,15 @@ class AudioAnalyzer:
         except Exception as fit_error:
             print(f"Curve fitting error: {fit_error}")
 
-    def instantaneous_phase_fit(self, x_cropped, t_cropped, center_freq, phase_residual_threshold, debug_data, debug):
+    def instantaneous_phase_fit(
+        self,
+        x_cropped,
+        t_cropped,
+        center_freq,
+        phase_residual_threshold,
+        debug_data,
+        debug,
+    ):
         """
         Estimate frequency using instantaneous phase from Hilbert transform
 
@@ -551,17 +577,25 @@ class AudioAnalyzer:
             if debug:
                 # Note: For phase_fit, we don't store fitted_signal or signal residuals
                 # since we assess quality directly from phase residuals
-                debug_data['estimated_freq'] = estimated_freq
-                debug_data['deviation_spd'] = deviation_spd
+                debug_data["estimated_freq"] = estimated_freq
+                debug_data["deviation_spd"] = deviation_spd
                 # Phase-specific debug data (use cropped residuals to avoid edge effects)
-                debug_data['unwrapped_phase'] = unwrapped_phase
-                debug_data['fitted_phase'] = fitted_phase
-                debug_data['phase_residuals'] = phase_residuals_cropped  # Cropped to avoid edge effects
-                debug_data['phase_residuals_time'] = t_cropped_residuals  # Time vector for cropped residuals
-                debug_data['rms_phase_residual'] = rms_phase_residual  # For display in plots
-                debug_data['analytic_amplitude'] = np.abs(analytic_signal)
-                debug_data['instantaneous_freq'] = np.diff(unwrapped_phase) / (2 * np.pi * np.diff(t_cropped))
-                debug_data['fit_method'] = 'phase_fit'
+                debug_data["unwrapped_phase"] = unwrapped_phase
+                debug_data["fitted_phase"] = fitted_phase
+                debug_data["phase_residuals"] = (
+                    phase_residuals_cropped  # Cropped to avoid edge effects
+                )
+                debug_data["phase_residuals_time"] = (
+                    t_cropped_residuals  # Time vector for cropped residuals
+                )
+                debug_data["rms_phase_residual"] = (
+                    rms_phase_residual  # For display in plots
+                )
+                debug_data["analytic_amplitude"] = np.abs(analytic_signal)
+                debug_data["instantaneous_freq"] = np.diff(unwrapped_phase) / (
+                    2 * np.pi * np.diff(t_cropped)
+                )
+                debug_data["fit_method"] = "phase_fit"
 
                 # Put debug data in queue (non-blocking, discard if full)
                 try:
@@ -571,12 +605,14 @@ class AudioAnalyzer:
                     try:
                         self.debug_plot_queue.get_nowait()
                         self.debug_plot_queue.put_nowait(debug_data)
-                    except:
+                    except (queue.Full, queue.Empty):
                         pass  # If still fails, just skip this update
 
             # Check fit quality using phase residuals directly
             if rms_phase_residual > phase_residual_threshold:
-                raise PoorFitError(f"Poor phase fit quality: RMS phase residual {rms_phase_residual:.6f} rad ({np.degrees(rms_phase_residual):.4f}°) exceeds threshold {phase_residual_threshold:.6f} rad ({np.degrees(phase_residual_threshold):.4f}°)")
+                raise PoorFitError(
+                    f"Poor phase fit quality: RMS phase residual {rms_phase_residual:.6f} rad ({np.degrees(rms_phase_residual):.4f}°) exceeds threshold {phase_residual_threshold:.6f} rad ({np.degrees(phase_residual_threshold):.4f}°)"
+                )
 
             # Update timegrapher data (only if fit quality is good)
             with self.lock:
@@ -614,7 +650,9 @@ class AudioAnalyzer:
             audio_float = audio_data.astype(np.float64) / 32768.0
 
             # Step 1: Get or compute bandpass filter
-            fir_coeff, lowcut, highcut, center_freq = self._compute_bandpass_filter(len(audio_float))
+            fir_coeff, lowcut, highcut, center_freq = self._compute_bandpass_filter(
+                len(audio_float)
+            )
 
             # Apply FIR filter (already linear phase, but use filtfilt for zero phase)
             x_filtered = signal.filtfilt(fir_coeff, 1.0, audio_float)
@@ -623,11 +661,11 @@ class AudioAnalyzer:
             debug_data = {}
             if debug:
                 w, h = signal.freqz(fir_coeff, worN=16384, fs=self.sample_rate)
-                debug_data['filter_freq'] = w
-                debug_data['filter_h'] = h
-                debug_data['lowcut'] = lowcut
-                debug_data['highcut'] = highcut
-                debug_data['center_freq'] = center_freq
+                debug_data["filter_freq"] = w
+                debug_data["filter_h"] = h
+                debug_data["lowcut"] = lowcut
+                debug_data["highcut"] = highcut
+                debug_data["center_freq"] = center_freq
 
             # Step 2: Crop the filtered signal to remove filter transients
             # Remove first 10% and last 10% of the signal
@@ -640,20 +678,36 @@ class AudioAnalyzer:
 
             # Debug plot 2: Filtered signal in time domain (show full signal)
             if debug:
-                debug_data['time'] = t_full
-                debug_data['x_filtered'] = x_filtered
-                debug_data['time_cropped'] = t_cropped
-                debug_data['x_cropped'] = x_cropped
+                debug_data["time"] = t_full
+                debug_data["x_filtered"] = x_filtered
+                debug_data["time_cropped"] = t_cropped
+                debug_data["x_cropped"] = x_cropped
 
             # Select the appropriate frequency estimation routine based on user selection
-            if self.freq_estimation_method == 'sine_fit':
-                self.sine_best_fit(x_cropped, t_cropped, center_freq, residual_threshold, debug_data, debug)
-            elif self.freq_estimation_method == 'phase_fit':
+            if self.freq_estimation_method == "sine_fit":
+                self.sine_best_fit(
+                    x_cropped,
+                    t_cropped,
+                    center_freq,
+                    residual_threshold,
+                    debug_data,
+                    debug,
+                )
+            elif self.freq_estimation_method == "phase_fit":
                 # For phase fit, use a phase residual threshold in radians (0.1 rad ~ 5.7 degrees)
                 phase_residual_threshold = 0.1  # radians
-                self.instantaneous_phase_fit(x_cropped, t_cropped, center_freq, phase_residual_threshold, debug_data, debug)
+                self.instantaneous_phase_fit(
+                    x_cropped,
+                    t_cropped,
+                    center_freq,
+                    phase_residual_threshold,
+                    debug_data,
+                    debug,
+                )
             else:
-                print(f"Unknown frequency estimation method: {self.freq_estimation_method}")
+                print(
+                    f"Unknown frequency estimation method: {self.freq_estimation_method}"
+                )
 
         except Exception as e:
             print(f"Error in timegrapher analysis: {e}")
@@ -670,7 +724,10 @@ class AudioAnalyzer:
             Deviation in seconds per day
         """
         with self.lock:
-            if self.timegrapher_freq is not None and self.timegrapher_deviation is not None:
+            if (
+                self.timegrapher_freq is not None
+                and self.timegrapher_deviation is not None
+            ):
                 return self.timegrapher_freq, self.timegrapher_deviation
             else:
                 return None, None
@@ -771,21 +828,25 @@ class AudioAnalyzer:
             highcut = center_freq * (1 + bandwidth_fraction / 2)
 
             # Check if we need to recompute filter
-            if (self.fir_coeff is None or
-                self.filter_center_freq != center_freq):
+            if self.fir_coeff is None or self.filter_center_freq != center_freq:
 
                 # Design FIR bandpass filter (linear phase, symmetric transients)
                 # Filter length: longer = sharper transition, but more edge effects
                 # For 1s at 48kHz, use ~10% of length for filter
-                numtaps = np.min([signal_length // 10, 4800]) # min(int(signal_length * 0.4), 4*1001)
+                numtaps = np.min(
+                    [signal_length // 10, 4800]
+                )  # min(int(signal_length * 0.4), 4*1001)
                 if numtaps % 2 == 0:  # Make odd for Type I filter (better for bandpass)
                     numtaps += 1
 
                 # Design FIR filter using windowed method
-                fir_coeff = signal.firwin(numtaps, [lowcut, highcut],
-                                          pass_zero=False,
-                                          fs=self.sample_rate,
-                                          window='hamming')
+                fir_coeff = signal.firwin(
+                    numtaps,
+                    [lowcut, highcut],
+                    pass_zero=False,
+                    fs=self.sample_rate,
+                    window="hamming",
+                )
 
                 # Cache the filter
                 self.fir_coeff = fir_coeff
