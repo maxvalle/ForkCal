@@ -36,6 +36,18 @@ Install Homebrew package manager if not already present: https://brew.sh
 - `pip install -r requirements.txt`
 - `python forkcal.py`
 
+## Tests
+Unit tests cover signal processing in `analysis.py` and pure helper functions in `forkcal.py`. They use synthetic audio and do not require a microphone or GUI.
+
+From an activated virtual environment:
+
+- `pip install -r requirements-dev.txt`
+- `pytest`
+
+Optional coverage report:
+
+- `pytest --cov=analysis --cov=forkcal --cov-report=term-missing`
+
 ## Build
 There is a build script using Nuitka for creating a binary executable, making it easier to launch from GUI. The script require the additional packages for Linux:
 - `sudo apt-get gcc patchelf ccache`
